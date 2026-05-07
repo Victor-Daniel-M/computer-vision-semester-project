@@ -1,0 +1,9 @@
+.DS_Store
+__pycache__/
+*.pyc
+
+Dataset/*
+Raw Dataset Foldere-20260429.zip
+MCS 7224-Computer vision Min project Instruction.docx
+
+outputs/poc/frames/

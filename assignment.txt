@@ -1,0 +1,36 @@
+Instruction:
+Upload your Report and code on MUELE platform.
+No Report will be accepted sent through other means
+Presentations date 13th June 2026
+
+Introduction
+In this practical examination you will complete a significant project in computer vision that uses material that you learned in the course. 
+Project Material
+Download the  raw dataset folder on from MUELE platform. The folder contains 21 video clips of different herbal plants collected under diverse environmental and lighting conditions.  
+TasPS20210810005634ks 
+Inspect the  datast. Identify one computer vision challenge or motivation you can do with the dataset. The challenge identified may be related to image processing or object dectection and recognition.
+Build a dataset from the raw dataset that would be suitable for selected challenge- Incase you are building an object detection or recognitions model, Use any image annotation tool to annotate your dataset into a format suitable to your challenge
+Depending on your challenge what could be the most suitable image features to enhance or extract.
+Describe the most suitable feature enhancement or extraction techniques for the features you have identify
+Using your dataset build an image enhancement or object detection model
+Evaluate your model 
+
+ Deliverables
+At the end of the project, you will hand in:
+A 10 page (maximum) report written in CVPR format that describes your project (excluding references). The page limit is strict. The report should be structured like a research paper, including introduction, related work, approach, and experimental results. You must submit a PDF. The CVPR format file is available on MUELE
+A presentation in PowerPoint format that describes your project. 
+A link to GitHub containing your code to reproduce your project.
+
+ Grading
+The final project counts for 40% of your course grade and written exam (20%).
+Report (18%)
+Introduction (4%)
+Related Work (2%)
+Approach and Correctness (5%)
+Analysis of Results (5%)
+Clarity and Reproducibility (2%)
+Presentation (20%)
+Explanation of Method (10%)
+Analysis of Results (10%)
+Extra credit
+Creative application or method (up to 2%)
