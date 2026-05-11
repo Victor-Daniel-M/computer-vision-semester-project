@@ -384,6 +384,49 @@ update:
     - Replace the simple handcrafted recognition features with stronger pretrained embeddings in the next pass
 ```
 
+### Entry 007
+```yaml
+update:
+  date: 2026-05-07
+  author: agent
+  phase: evaluation
+  type: result
+  summary: Added a tiny CNN baseline and found it underperformed the simpler weak-recognition baselines.
+  details:
+    - Implemented a lightweight CNN classifier trained on 96x96 frame crops with video-level weak labels
+    - The best CNN result was on raw frames at about 0.24 accuracy, below both k-NN and logistic regression
+    - Enhancement variants further reduced CNN performance in this first setup, suggesting the dataset is too small for an effective from-scratch CNN baseline
+  affected_files:
+    - src/poc_pipeline.py
+    - outputs/poc/reports/summary.json
+  status: done
+  follow_up:
+    - Try a stronger recognition baseline using pretrained CNN embeddings instead of a from-scratch network
+    - Keep raw and clahe as the most plausible variants for the next recognition pass
+```
+
+### Entry 008
+```yaml
+update:
+  date: 2026-05-07
+  author: agent
+  phase: evaluation
+  type: result
+  summary: Increased frame sampling density and observed clear gains across all recognition baselines.
+  details:
+    - Raised sampling density to about 1 second intervals with up to 30 frames per video, increasing the working set to 469 frames
+    - Raw-frame k-NN improved from about 0.64 to about 0.82 accuracy, and raw logistic regression improved from about 0.47 to about 0.63
+    - The tiny CNN improved from about 0.24 to about 0.39 on raw frames, showing that additional frame diversity helps the learned model even though it still trails the simpler baselines
+  affected_files:
+    - src/poc_pipeline.py
+    - outputs/poc/frame_index.csv
+    - outputs/poc/reports/summary.json
+  status: done
+  follow_up:
+    - Decide whether to keep the denser sampling as the default POC setting
+    - Try pretrained CNN embeddings next, since the larger sample appears to support stronger models better
+```
+
 ## Next Recommended Additions
 - Dataset inventory summary after reviewing the raw videos
 - Candidate project ideas with tradeoffs
