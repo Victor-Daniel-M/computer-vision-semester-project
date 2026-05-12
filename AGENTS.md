@@ -427,6 +427,30 @@ update:
     - Try pretrained CNN embeddings next, since the larger sample appears to support stronger models better
 ```
 
+### Entry 009
+```yaml
+update:
+  date: 2026-05-11
+  author: agent
+  phase: evaluation
+  type: result
+  summary: Added pretrained ResNet18 embeddings and found enhanced variants that beat raw recognition accuracy.
+  details:
+    - Added lighter enhancement variants named clahe_light, gamma_light, gamma_clahe_light, and sharpen_light while keeping clahe
+    - Added ResNet18 feature extraction followed by logistic regression and k-NN classifiers
+    - The best enhanced variants were clahe and gamma_light at about 0.922 accuracy with ResNet18 logistic regression, compared with raw at about 0.915
+    - The pretrained weights are cached locally under outputs/poc/torch_cache and ignored by git
+  affected_files:
+    - src/poc_pipeline.py
+    - outputs/poc/reports/summary.json
+    - outputs/poc/reports/accuracy_table.csv
+    - .gitignore
+  status: done
+  follow_up:
+    - Inspect before-and-after grids for clahe and gamma_light to choose the most defensible enhancement method
+    - Use ResNet18 logistic regression as the stronger weak-recognition baseline in the report
+```
+
 ## Next Recommended Additions
 - Dataset inventory summary after reviewing the raw videos
 - Candidate project ideas with tradeoffs

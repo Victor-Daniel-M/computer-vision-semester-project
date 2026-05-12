@@ -10,6 +10,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import torch
+from torchvision.models import ResNet18_Weights, resnet18
 from torch import nn
 from torch.utils.data import DataLoader, TensorDataset
 from sklearn.linear_model import LogisticRegression
@@ -26,11 +27,14 @@ RAW_FRAMES_DIR = OUTPUT_DIR / "frames" / "raw"
 ENHANCED_DIR = OUTPUT_DIR / "frames" / "enhanced"
 GRID_DIR = OUTPUT_DIR / "grids"
 REPORTS_DIR = OUTPUT_DIR / "reports"
+TORCH_CACHE_DIR = OUTPUT_DIR / "torch_cache"
 CSV_PATH = OUTPUT_DIR / "frame_index.csv"
 SUMMARY_PATH = REPORTS_DIR / "summary.json"
+ACCURACY_TABLE_PATH = REPORTS_DIR / "accuracy_table.csv"
 SEED = 42
 
 
+torch.hub.set_dir(str(TORCH_CACHE_DIR))
 torch.manual_seed(SEED)
 np.random.seed(SEED)
 
@@ -64,7 +68,7 @@ class TinyCNN(nn.Module):
 
 
 def ensure_dirs() -> None:
-    for path in [RAW_FRAMES_DIR, ENHANCED_DIR, GRID_DIR, REPORTS_DIR]:
+    for path in [RAW_FRAMES_DIR, ENHANCED_DIR, GRID_DIR, REPORTS_DIR, TORCH_CACHE_DIR]:
         path.mkdir(parents=True, exist_ok=True)
 
 
@@ -151,25 +155,30 @@ def pipeline_clahe(image_rgb: np.ndarray) -> np.ndarray:
     return clahe_luminance(image_rgb)
 
 
-def pipeline_balanced(image_rgb: np.ndarray) -> np.ndarray:
-    return clahe_luminance(gamma_correction(white_balance_gray_world(image_rgb), gamma=0.95))
+def pipeline_clahe_light(image_rgb: np.ndarray) -> np.ndarray:
+    return clahe_luminance(image_rgb, clip_limit=1.0)
 
 
-def pipeline_full(image_rgb: np.ndarray) -> np.ndarray:
-    return denoise_and_sharpen(
-        clahe_luminance(
-            gamma_correction(
-                white_balance_gray_world(image_rgb),
-                gamma=0.9,
-            )
-        )
-    )
+def pipeline_gamma_light(image_rgb: np.ndarray) -> np.ndarray:
+    return gamma_correction(image_rgb, gamma=1.08)
+
+
+def pipeline_gamma_clahe_light(image_rgb: np.ndarray) -> np.ndarray:
+    return clahe_luminance(gamma_correction(image_rgb, gamma=1.05), clip_limit=1.0)
+
+
+def pipeline_sharpen_light(image_rgb: np.ndarray) -> np.ndarray:
+    blurred = cv2.GaussianBlur(image_rgb, (0, 0), 1.0)
+    sharpened = cv2.addWeighted(image_rgb, 1.12, blurred, -0.12, 0)
+    return np.clip(sharpened, 0, 255).astype(np.uint8)
 
 
 PIPELINES = [
     PipelineSpec("clahe", pipeline_clahe),
-    PipelineSpec("balanced", pipeline_balanced),
-    PipelineSpec("full", pipeline_full),
+    PipelineSpec("clahe_light", pipeline_clahe_light),
+    PipelineSpec("gamma_light", pipeline_gamma_light),
+    PipelineSpec("gamma_clahe_light", pipeline_gamma_clahe_light),
+    PipelineSpec("sharpen_light", pipeline_sharpen_light),
 ]
 
 
@@ -278,6 +287,12 @@ def build_cnn_table(frame_index: pd.DataFrame, variant: str, image_size: int = 9
     return np.stack(images), np.array(labels)
 
 
+def select_torch_device() -> torch.device:
+    if torch.backends.mps.is_available():
+        return torch.device("mps")
+    return torch.device("cpu")
+
+
 def split_labels(y: np.ndarray) -> tuple[LabelEncoder, np.ndarray, np.ndarray]:
     label_encoder = LabelEncoder()
     y_enc = label_encoder.fit_transform(y)
@@ -346,6 +361,67 @@ def cnn_accuracy(
     }
 
 
+def build_resnet18_embeddings(
+    frame_index: pd.DataFrame,
+    variant: str,
+    batch_size: int = 32,
+) -> tuple[np.ndarray, np.ndarray, str]:
+    device = select_torch_device()
+    weights = ResNet18_Weights.DEFAULT
+    model = resnet18(weights=weights)
+    model.fc = nn.Identity()
+    model.eval()
+    model.to(device)
+
+    preprocess = weights.transforms()
+    tensors = []
+    labels = []
+    for _, row in frame_index.iterrows():
+        image_rgb = load_image_variant(row, variant)
+        if image_rgb is None:
+            continue
+        image_tensor = torch.from_numpy(image_rgb).permute(2, 0, 1)
+        tensors.append(preprocess(image_tensor))
+        labels.append(row["video_id"])
+
+    embeddings = []
+    with torch.inference_mode():
+        for i in range(0, len(tensors), batch_size):
+            batch = torch.stack(tensors[i : i + batch_size]).to(device)
+            output = model(batch).cpu().numpy()
+            embeddings.append(output)
+
+    return np.vstack(embeddings), np.array(labels), str(device)
+
+
+def run_embedding_baseline(frame_index: pd.DataFrame, variant: str) -> dict[str, object]:
+    X, y, device = build_resnet18_embeddings(frame_index, variant)
+    label_encoder, train_idx, test_idx = split_labels(y)
+    y_enc = label_encoder.transform(y)
+    X_train, X_test = X[train_idx], X[test_idx]
+    y_train, y_test = y_enc[train_idx], y_enc[test_idx]
+    models = {
+        "resnet18_logreg": LogisticRegression(max_iter=2000),
+        "resnet18_knn": KNeighborsClassifier(n_neighbors=3),
+    }
+    metrics: dict[str, object] = {}
+    for name, model in models.items():
+        model.fit(X_train, y_train)
+        preds = model.predict(X_test)
+        metrics[name] = {
+            "accuracy": float(accuracy_score(y_test, preds)),
+            "device": device,
+            "report": classification_report(
+                y_test,
+                preds,
+                target_names=label_encoder.classes_,
+                zero_division=0,
+                output_dict=True,
+            ),
+        }
+    return metrics
+
+
 def run_recognition_baseline(frame_index: pd.DataFrame) -> dict[str, dict[str, object]]:
     metrics: dict[str, dict[str, object]] = {}
     variants = ["raw"] + [pipeline.name for pipeline in PIPELINES]
@@ -374,8 +450,24 @@ def run_recognition_baseline(frame_index: pd.DataFrame) -> dict[str, dict[str, o
                 ),
             }
         variant_metrics["tinycnn"] = cnn_accuracy(frame_index, variant)
+        variant_metrics.update(run_embedding_baseline(frame_index, variant))
         metrics[variant] = variant_metrics
     return metrics
+
+
+def build_accuracy_table(metrics: dict[str, dict[str, object]]) -> list[dict[str, object]]:
+    rows: list[dict[str, object]] = []
+    for variant, models in metrics.items():
+        for model_name, result in models.items():
+            rows.append(
+                {
+                    "variant": variant,
+                    "model": model_name,
+                    "accuracy": result["accuracy"],
+                    "device": result.get("device", ""),
+                }
+            )
+    return sorted(rows, key=lambda row: row["accuracy"], reverse=True)
 
 
 def main() -> None:
@@ -384,11 +476,14 @@ def main() -> None:
     run_pipelines(frame_index)
     grids = build_before_after_grids(frame_index)
     metrics = run_recognition_baseline(frame_index)
+    accuracy_table = build_accuracy_table(metrics)
+    pd.DataFrame(accuracy_table).to_csv(ACCURACY_TABLE_PATH, index=False)
     summary = {
         "videos": frame_index["video_id"].nunique(),
         "frames": int(len(frame_index)),
         "pipelines": [pipeline.name for pipeline in PIPELINES],
         "grids": grids,
+        "accuracy_table": accuracy_table,
         "metrics": metrics,
     }
     SUMMARY_PATH.write_text(json.dumps(summary, indent=2))
