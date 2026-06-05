@@ -23,14 +23,17 @@ A link to GitHub containing your code to reproduce your project.
 
  Grading
 The final project counts for 40% of your course grade and written exam (20%).
+
 Report (18%)
 Introduction (4%)
 Related Work (2%)
 Approach and Correctness (5%)
 Analysis of Results (5%)
 Clarity and Reproducibility (2%)
+
 Presentation (20%)
 Explanation of Method (10%)
 Analysis of Results (10%)
+
 Extra credit
 Creative application or method (up to 2%)

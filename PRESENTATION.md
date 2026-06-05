@@ -62,7 +62,23 @@ Key message:
 
 The dataset naturally supports an enhancement-focused computer vision task.
 
-## Slide 6: Pipeline Overview
+![Before and after enhancement examples](outputs/poc/grids/VID_20260408_171126_grid.png)
+
+## Slide 6: Related Work Anchors
+
+The project builds on three computer vision ideas:
+
+- Image enhancement for improving visibility under difficult capture conditions.
+- CLAHE for local contrast enhancement with contrast limiting.
+- Transfer learning with pretrained CNN features for small-data recognition.
+
+Why these fit:
+
+- The dataset has lighting and contrast issues.
+- Labels are weak, so training a large CNN from scratch is risky.
+- ResNet18 embeddings give strong reusable visual features.
+
+## Slide 7: Pipeline Overview
 
 Pipeline:
 
@@ -77,7 +93,7 @@ Current extracted dataset:
 - 469 sampled frames
 - 21 weak video-level classes
 
-## Slide 7: Enhancement Methods
+## Slide 8: Enhancement Methods
 
 Tested image variants:
 
@@ -92,7 +108,7 @@ Main idea:
 
 Use conservative enhancement to improve visibility without destroying plant identity cues.
 
-## Slide 8: What Is CLAHE?
+## Slide 9: What Is CLAHE?
 
 CLAHE = Contrast Limited Adaptive Histogram Equalization.
 
@@ -107,7 +123,7 @@ Why it fits this dataset:
 - Leaves, stems, bark, and flowers often appear under uneven lighting.
 - Local contrast can make plant structures more visible.
 
-## Slide 9: What Is Gamma Light?
+## Slide 10: What Is Gamma Light?
 
 `gamma_light` is mild gamma correction.
 
@@ -122,7 +138,7 @@ Why it fits this dataset:
 - Smartphone exposure varies across videos.
 - Some frames need light tonal correction rather than heavy enhancement.
 
-## Slide 10: Recognition Setup
+## Slide 11: Recognition Setup
 
 Recognition baselines:
 
@@ -140,7 +156,7 @@ Why:
 - Logistic regression is simple and reproducible.
 - No need to train a large CNN from scratch.
 
-## Slide 11: Main Results
+## Slide 12: Main Results
 
 Top results:
 
@@ -155,7 +171,9 @@ Key result:
 
 **CLAHE and gamma_light outperform raw frames.**
 
-## Slide 12: Interpretation
+![Comparison grid used for visual inspection](outputs/poc/grids/VID_20260408_172233_grid.png)
+
+## Slide 13: Analysis of Results
 
 What the results suggest:
 
@@ -164,7 +182,23 @@ What the results suggest:
 - Pretrained features are much stronger than a small CNN trained from scratch.
 - Enhancement must preserve discriminative plant cues such as color, texture, and structure.
 
-## Slide 13: Limitations
+## Slide 14: Reproducibility
+
+Reproducible outputs:
+
+- `src/poc_pipeline.py`
+- `outputs/poc/frame_index.csv`
+- `outputs/poc/reports/accuracy_table.csv`
+- `outputs/poc/reports/summary.json`
+- `outputs/poc/grids/`
+
+Reproducible command:
+
+```bash
+python3 src/poc_pipeline.py
+```
+
+## Slide 15: Limitations
 
 Current limitations:
 
@@ -174,7 +208,34 @@ Current limitations:
 - Severe overexposure cannot fully recover lost image detail.
 - Dataset is small.
 
-## Slide 14: Conclusion
+## Slide 16: Rubric Coverage
+
+Report coverage:
+
+- Introduction: problem, dataset challenge, motivation
+- Related work: enhancement, CLAHE, transfer learning
+- Approach and correctness: extraction, enhancement, weak recognition
+- Analysis of results: raw vs enhanced comparison
+- Clarity and reproducibility: code, CSVs, summary metrics, grids
+
+Presentation coverage:
+
+- Explanation of method: pipeline and enhancement slides
+- Analysis of results: result table, interpretation, limitations
+
+## Slide 17: Creative Element
+
+Creative application:
+
+- Reframed an unlabeled plant video dataset as weakly supervised recognition.
+- Used enhancement not as decoration, but as a measurable preprocessing intervention.
+- Compared raw and enhanced frames using pretrained visual embeddings.
+
+Why this matters:
+
+The project stays honest about missing labels while still producing measurable computer vision evidence.
+
+## Slide 18: Conclusion
 
 Summary:
 
@@ -187,7 +248,7 @@ Main conclusion:
 
 **Conservative image enhancement can improve weakly supervised recognition of smartphone-captured plant video frames.**
 
-## Slide 15: Future Work
+## Slide 19: Future Work
 
 Possible improvements:
 
@@ -196,4 +257,3 @@ Possible improvements:
 - Add image quality metrics such as contrast, entropy, blur, and clipping.
 - Compare more pretrained models.
 - Convert the final report to CVPR format and add polished figures.
-

@@ -1,11 +1,13 @@
 # AGENTS.md
 
 ## Purpose
+
 This file is the working project guide for the Computer Vision semester mini-project. It summarizes the assignment, defines the expected outputs, and provides a schema for tracking progress, decisions, changes, and thoughts as the project evolves.
 
 This document is expected to grow over time. It should be updated whenever there is a meaningful change in direction, implementation, dataset preparation, experimentation, reporting, or presentation planning.
 
 ## Assignment Summary
+
 - Build a significant computer vision project using course concepts.
 - Start from the raw dataset provided on MUELE.
 - The dataset consists of 21 video clips of different herbal plants captured under diverse environmental and lighting conditions.
@@ -18,6 +20,7 @@ This document is expected to grow over time. It should be updated whenever there
 - Evaluate the model.
 
 ## Deliverables
+
 - Report in CVPR format, maximum 10 pages excluding references, submitted as PDF.
 - PowerPoint presentation summarizing the project.
 - GitHub repository link with reproducible code.
@@ -25,6 +28,7 @@ This document is expected to grow over time. It should be updated whenever there
 - Presentation date: 13 June 2026.
 
 ## What Success Looks Like
+
 - The task is clearly defined and appropriate for the available dataset.
 - The dataset preparation process is documented and reproducible.
 - The method choice is justified by the problem and available data.
@@ -33,9 +37,11 @@ This document is expected to grow over time. It should be updated whenever there
 - The presentation explains both method and results clearly.
 
 ## Recommended Project Framing
+
 Prefer a focused and achievable task over a broad one. The assignment description confirms the capture setup, but it does not provide species or class labels. That means supervised classification should not be assumed unless labels are later created or recovered.
 
 Safer task options include:
+
 - Herbal plant image enhancement under varying lighting conditions
 - Video-level herbal plant recognition using provisional per-video identifiers
 - Image enhancement followed by weakly supervised recognition
@@ -44,6 +50,7 @@ Safer task options include:
 If reliable plant identity labels become available later, the project can be upgraded to supervised classification. More ambitious tasks like object detection should only be chosen if the dataset quality and annotation effort are manageable.
 
 ## Key Constraints And Risks
+
 - The dataset may not come with labels in a ready-to-use format.
 - The dataset description does not identify plant classes or species names.
 - Frames from the same source video should not leak across train, validation, and test splits.
@@ -52,24 +59,28 @@ If reliable plant identity labels become available later, the project can be upg
 - Diverse lighting conditions are both an opportunity and a source of model instability.
 
 ## Dataset Reality Check
+
 - The current dataset description only states that there are 21 short smartphone videos of herbal plants collected under diverse lighting conditions and environments.
 - This description is not the same as having semantic labels for supervised classification.
 - Unless plant identities are supplied later or created manually, the project should avoid claiming species classification.
 - Any recognition task should be described honestly as weakly supervised, video-level, or provisional if labels are inferred from the video unit itself.
 
 ## Working Assumption
+
 - Current assumption: each video predominantly captures a different plant instance or a visually distinct plant subject.
 - Under this assumption, each video can be treated as one provisional label for recognition experiments.
 - These are weak labels derived from video identity, not confirmed botanical species labels.
 - Any results based on this assumption should be described as video-level or weakly supervised recognition rather than species classification.
 
 ## Why This Assumption Is Reasonable
+
 - The dataset contains 21 separate videos rather than one long continuous recording.
 - The assignment describes them as videos of herbal plants collected in different conditions and environments.
 - A video-level label is a practical way to build a reproducible recognition task from unlabeled raw footage.
 - This assumption is strong enough to support experimentation, while still being honest about the limitations of the data.
 
 ## How Recognition Would Work Under This Assumption
+
 - Extract frames from each video.
 - Assign each frame the provisional label of its source video.
 - Train and evaluate a recognition model using these video-level labels.
@@ -77,38 +88,47 @@ If reliable plant identity labels become available later, the project can be upg
 - Interpret the task as distinguishing visually distinct plant videos, not certifying plant species names.
 
 ## Class Notes Incorporated
+
 The following points were captured during class and should guide the project direction:
+
 - Preprocessing or enhancing the images is a valid and expected direction.
 - The project should clearly describe the challenge being addressed and the steps taken to solve it.
 - Object detection and object recognition were both mentioned as possible task families.
 
 Practical interpretation of these notes:
+
 - Image preprocessing and enhancement are not just optional utilities; they can be part of the core contribution.
 - The final report should explicitly connect the identified dataset challenge to each pipeline step.
 - Detection remains possible, but only if annotation effort and scene clarity make it realistic.
 - Recognition is still possible, but task definition must stay honest if semantic labels are missing.
 
 ## Candidate Challenge Statements
+
 Possible challenge statements that fit both the assignment and the class notes:
+
 - Diverse lighting conditions reduce the visibility and consistency of herbal plant features, making recognition difficult.
 - Natural background clutter and overlapping leaves make plant localization and recognition difficult.
 - Smartphone-captured videos introduce motion blur, viewpoint variation, and inconsistent framing.
 
 Each final project direction should state:
+
 - What the main visual challenge is
 - What preprocessing or enhancement steps address that challenge
 - What model is used after preprocessing
 - How the improvement is evaluated
 
 ## Observed Visual Challenges
+
 The frames reviewed so far suggest the dataset contains several real-world outdoor imaging problems that can support an enhancement-focused or weakly supervised vision project.
 
 ### 1. Overexposure And Highlight Clipping
+
 - Some frames are strongly overexposed due to direct sunlight.
 - Large bright regions lose texture and become nearly white.
 - This reduces the visibility of leaves, stems, and fine structure.
 
 Possible enhancement responses:
+
 - Gamma correction
 - Highlight suppression
 - CLAHE on luminance
@@ -116,54 +136,65 @@ Possible enhancement responses:
 - Cropping or masking severely clipped regions
 
 Important limitation:
+
 - Fully saturated white regions may have permanently lost detail and cannot be truly recovered.
 
 ### 2. Uneven Lighting
+
 - Different parts of the same frame may be in shadow, partial sun, or direct glare.
 - This creates unstable contrast and inconsistent color appearance.
 
 Possible enhancement responses:
+
 - Local contrast enhancement
 - Adaptive histogram equalization
 - Illumination normalization
 - Retinex-style correction
 
 ### 3. Background Clutter And Occlusion
+
 - Leaves, stems, soil, bark, and other vegetation often overlap.
 - The main plant of interest may not be cleanly isolated.
 
 Possible enhancement responses:
+
 - Region-of-interest cropping
 - Saliency-guided selection
 - Foreground-background separation
 - Edge-aware smoothing to preserve structure
 
 ### 4. Scale And Scene Variation
+
 - Some videos appear to show small close-range plants, while others include large tree structures.
 - The target object scale and context vary significantly between videos.
 
 Possible enhancement responses:
+
 - Multi-scale feature extraction
 - Standardized frame sampling
 - Center cropping or patch extraction
 - Task reframing toward general plant-scene analysis if identity labels remain unavailable
 
 ### 5. Smartphone Capture Artifacts
+
 - Videos may contain motion blur, compression artifacts, and inconsistent framing.
 - Camera movement can reduce the usefulness of some frames.
 
 Possible enhancement responses:
+
 - Frame quality filtering
 - Deblurring where modest blur exists
 - Denoising
 - Selecting representative sharp frames instead of using every frame
 
 ## Implications For Project Design
+
 - The dataset naturally supports an image enhancement project because several visible challenges are directly linked to image quality.
 - Any downstream recognition or retrieval task should ideally compare performance before and after enhancement.
 - Evaluation should distinguish between recoverable issues such as uneven illumination and non-recoverable issues such as severe clipping.
 
 ## Working Principles
+
 - Keep the project narrow, defensible, and reproducible.
 - Document every important assumption.
 - Update this file on every meaningful change or thought.
@@ -171,6 +202,7 @@ Possible enhancement responses:
 - Prefer methods that can be implemented, evaluated, and explained clearly within the project timeline.
 
 ## Project Workflow
+
 1. Inspect raw dataset.
 2. Define one primary vision task.
 3. Decide labels, classes, and split strategy.
@@ -183,6 +215,7 @@ Possible enhancement responses:
 10. Prepare presentation.
 
 ## Suggested Repository Structure
+
 ```text
 .
 ├── AGENTS.md
@@ -209,7 +242,9 @@ Possible enhancement responses:
 ```
 
 ## CVPR Report Expectations
+
 The report should stay aligned with CVPR-style research writing. A practical structure is:
+
 - Title
 - Abstract
 - Introduction
@@ -225,6 +260,7 @@ The report should stay aligned with CVPR-style research writing. A practical str
 Keep the report concise, evidence-driven, and reproducible. Figures and tables should carry real explanatory value.
 
 ## Presentation Expectations
+
 - Explain the problem clearly.
 - Show dataset creation and preprocessing decisions.
 - Summarize the chosen model and why it fits.
@@ -232,6 +268,7 @@ Keep the report concise, evidence-driven, and reproducible. Figures and tables s
 - Discuss limitations and possible improvements.
 
 ## Update Schema
+
 Use the following schema whenever adding a new progress entry to this file.
 
 ```yaml
@@ -252,6 +289,7 @@ update:
 ```
 
 ## Update Rules
+
 - Add a new entry for every meaningful idea, decision, change, experiment, or result.
 - Prefer short, factual entries over long narration.
 - If a prior decision changes, record the new decision instead of overwriting history.
@@ -261,6 +299,7 @@ update:
 ## Running Log
 
 ### Entry 001
+
 ```yaml
 update:
   date: 2026-05-05
@@ -281,6 +320,7 @@ update:
 ```
 
 ### Entry 002
+
 ```yaml
 update:
   date: 2026-05-05
@@ -301,6 +341,7 @@ update:
 ```
 
 ### Entry 003
+
 ```yaml
 update:
   date: 2026-05-05
@@ -321,6 +362,7 @@ update:
 ```
 
 ### Entry 004
+
 ```yaml
 update:
   date: 2026-05-05
@@ -341,6 +383,7 @@ update:
 ```
 
 ### Entry 005
+
 ```yaml
 update:
   date: 2026-05-05
@@ -361,6 +404,7 @@ update:
 ```
 
 ### Entry 006
+
 ```yaml
 update:
   date: 2026-05-07
@@ -374,7 +418,7 @@ update:
     - Generated before-and-after grids and ran a quick weak-label recognition baseline on raw versus enhanced frames
     - Initial k-NN accuracy was highest on raw frames at about 0.64, with clahe close behind at about 0.62
   affected_files:
-    - src/poc_pipeline.py
+    - src/pipeline.py
     - notebooks/poc_review.ipynb
     - outputs/poc/frame_index.csv
     - outputs/poc/reports/summary.json
@@ -385,6 +429,7 @@ update:
 ```
 
 ### Entry 007
+
 ```yaml
 update:
   date: 2026-05-07
@@ -397,7 +442,7 @@ update:
     - The best CNN result was on raw frames at about 0.24 accuracy, below both k-NN and logistic regression
     - Enhancement variants further reduced CNN performance in this first setup, suggesting the dataset is too small for an effective from-scratch CNN baseline
   affected_files:
-    - src/poc_pipeline.py
+    - src/pipeline.py
     - outputs/poc/reports/summary.json
   status: done
   follow_up:
@@ -406,6 +451,7 @@ update:
 ```
 
 ### Entry 008
+
 ```yaml
 update:
   date: 2026-05-07
@@ -418,7 +464,7 @@ update:
     - Raw-frame k-NN improved from about 0.64 to about 0.82 accuracy, and raw logistic regression improved from about 0.47 to about 0.63
     - The tiny CNN improved from about 0.24 to about 0.39 on raw frames, showing that additional frame diversity helps the learned model even though it still trails the simpler baselines
   affected_files:
-    - src/poc_pipeline.py
+    - src/pipeline.py
     - outputs/poc/frame_index.csv
     - outputs/poc/reports/summary.json
   status: done
@@ -428,6 +474,7 @@ update:
 ```
 
 ### Entry 009
+
 ```yaml
 update:
   date: 2026-05-11
@@ -441,7 +488,7 @@ update:
     - The best enhanced variants were clahe and gamma_light at about 0.922 accuracy with ResNet18 logistic regression, compared with raw at about 0.915
     - The pretrained weights are cached locally under outputs/poc/torch_cache and ignored by git
   affected_files:
-    - src/poc_pipeline.py
+    - src/pipeline.py
     - outputs/poc/reports/summary.json
     - outputs/poc/reports/accuracy_table.csv
     - .gitignore
@@ -452,6 +499,7 @@ update:
 ```
 
 ## Next Recommended Additions
+
 - Dataset inventory summary after reviewing the raw videos
 - Candidate project ideas with tradeoffs
 - Final task definition

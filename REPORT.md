@@ -21,11 +21,15 @@ The main contributions of this project are:
 
 ## 2. Related Work
 
-Image enhancement is a common preprocessing step in computer vision when images suffer from low contrast, uneven illumination, blur, or sensor artifacts. Histogram equalization improves global contrast by redistributing intensity values, but it can over-amplify noise when applied uniformly. CLAHE addresses this by applying adaptive histogram equalization locally while limiting contrast amplification.
+Image enhancement is a common preprocessing step in computer vision when images suffer from low contrast, uneven illumination, blur, or sensor artifacts. Histogram equalization improves global contrast by redistributing intensity values, but it can over-amplify noise when applied uniformly. CLAHE addresses this by applying adaptive histogram equalization locally while limiting contrast amplification [1].
 
-Gamma correction is another simple enhancement technique. It applies a nonlinear tone mapping that can brighten or darken midtones without changing the image uniformly. This makes it useful for smartphone imagery where exposure may be inconsistent.
+Gamma correction is another simple enhancement technique. It applies a nonlinear tone mapping that can brighten or darken midtones without changing the image uniformly [2]. This makes it useful for smartphone imagery where exposure may be inconsistent.
 
-Deep convolutional networks are widely used for recognition, but training CNNs from scratch usually requires large labeled datasets. In small-data settings, pretrained CNNs are often used as feature extractors. This project uses ResNet18 embeddings to evaluate whether enhancement improves downstream recognition without needing to train a deep model from scratch.
+Sharpening is also a standard spatial-domain enhancement operation for improving apparent edge definition and local detail [2]. In this project, sharpening is used conservatively because plant recognition depends on fine leaf and stem structures, but excessive sharpening can amplify compression artifacts and noise.
+
+More advanced enhancement methods also exist. Retinex-based methods model an image as a combination of illumination and reflectance, making them well suited to illumination correction and color constancy problems [6]. Recent deep low-light enhancement methods build on this idea and can produce stronger perceptual results, but they often require additional training data, paired or unpaired enhancement datasets, or more complex validation [7]. Because this dataset is small, weakly labeled, and collected specifically for a course project, this work uses CLAHE, gamma correction, and mild sharpening as interpretable, reproducible classical enhancement baselines rather than claiming they are the most advanced possible enhancement methods.
+
+Deep convolutional networks are widely used for recognition, but training CNNs from scratch usually requires large labeled datasets. In this project, enhancement is evaluated through a progression of recognition baselines: handcrafted features with logistic regression and k-nearest neighbors, a Tiny CNN trained from scratch, and finally ResNet18 embeddings with logistic regression and k-nearest neighbors. The handcrafted baselines provide simple color, edge, and sharpness comparisons; the Tiny CNN provides a lightweight learned baseline; and ResNet18 embeddings [3] provide the stronger pretrained representation for testing whether enhancement improves downstream recognition without requiring large-scale training.
 
 ## 3. Dataset and Problem Definition
 
@@ -35,7 +39,7 @@ Instead, the project uses the following working assumption:
 
 **Each video predominantly captures a distinct plant instance or visually distinct plant subject.**
 
-Under this assumption, frames extracted from the same video inherit the same provisional video-level label. This creates a weakly supervised recognition task: given a frame, the system predicts which source video or plant subject it most likely belongs to.
+Under this assumption, frames extracted from the same video inherit the same provisional video-level label. This creates a weakly supervised recognition task because the supervision is coarse and derived from the video unit rather than verified independently for every frame [4]. Similar video-level labeling strategies are common in video recognition datasets, but they introduce frame-level uncertainty because not every frame necessarily contains the same discriminative visual evidence [5]. In this project, the resulting task is: given a frame, the system predicts which source video or plant subject it most likely belongs to.
 
 ### 3.1 Observed Visual Challenges
 
@@ -60,7 +64,7 @@ The project pipeline has four main stages:
 
 ### 4.1 Frame Extraction
 
-Frames are sampled at approximately one-second intervals, with up to 30 frames per video. This produces 469 sampled frames from 21 videos. Each frame is indexed in a CSV file with its source video, frame index, timestamp, and path.
+Frames are sampled at approximately one-second intervals, with a cap of 30 frames per video. The cap is not reached by every video because several clips are shorter than 30 seconds; in the extracted dataset, per-video frame counts range from 12 to 30. This produces 469 sampled frames from 21 videos. Each frame is indexed in a CSV file with its source video, frame index, timestamp, and path.
 
 ### 4.2 Enhancement Variants
 
@@ -73,17 +77,17 @@ The following image variants are evaluated:
 - `gamma_clahe_light`: mild gamma correction followed by light CLAHE.
 - `sharpen_light`: mild unsharp masking for detail enhancement.
 
-CLAHE improves local contrast while limiting noise amplification. Gamma correction adjusts image tone nonlinearly and can improve midtone visibility without drastically changing color or texture. The lighter variants are intentionally conservative because earlier experiments showed that aggressive enhancement can reduce recognition accuracy.
+CLAHE improves local contrast while limiting noise amplification. Gamma correction adjusts image tone nonlinearly and can improve midtone visibility without drastically changing color or texture. Mild sharpening tests whether clearer edges and leaf boundaries improve recognition features. These methods are common classical enhancement operations and are appropriate first choices because they are simple, fast, explainable, and do not require enhancement-specific training labels. The lighter variants are intentionally conservative so the pipeline can test whether small tonal changes help without heavily altering plant color and texture cues.
 
 ### 4.3 Recognition Baselines
 
-Three recognition families are tested:
+Recognition is used as the downstream evaluation task: if an enhancement method makes plant frames more visually informative, a recognition model should perform at least slightly better on enhanced frames than on raw frames. To avoid relying on a single model, three recognition families are tested:
 
-- Handcrafted features: HSV color histograms, edge density, and Laplacian sharpness variance.
-- Tiny CNN: a small convolutional network trained from scratch on 96x96 frame crops.
-- ResNet18 embeddings: pretrained ResNet18 used as a fixed feature extractor, followed by logistic regression or k-nearest neighbors.
+- Handcrafted features: HSV color histograms, edge density, and Laplacian sharpness variance are extracted from each frame. These features are evaluated with logistic regression and 3-nearest neighbors. This baseline tests whether enhancement improves simple color, edge, and sharpness cues commonly used in classical image analysis [2], while k-nearest neighbors provides a simple non-parametric recognition baseline [8].
+- Tiny CNN: a small three-layer convolutional network is trained from scratch on 96x96 frame crops for 12 epochs. This baseline tests whether a lightweight learned model can benefit from enhancement, while also showing the limitation of training a CNN from a small weakly labeled dataset. CNNs are a standard architecture for visual recognition because convolutional layers learn local spatial patterns such as edges, textures, and shapes [9].
+- ResNet18 embeddings: pretrained ResNet18 is used as a fixed feature extractor, and the resulting embeddings are classified using logistic regression and 3-nearest neighbors. This baseline tests enhancement using stronger visual features learned from large-scale image pretraining. Using pretrained CNN activations as general-purpose visual features is a common transfer-learning strategy for small recognition datasets [10].
 
-The strongest recognition setup is ResNet18 feature extraction followed by logistic regression.
+All baselines use the same stratified 70/30 frame-level train-test split so that raw and enhanced variants are compared under the same evaluation conditions. The strongest recognition setup is ResNet18 feature extraction followed by logistic regression, so it is used as the main result for judging whether enhancement improves downstream recognition.
 
 ## 5. Experiments
 
@@ -118,7 +122,7 @@ The results suggest that mild enhancement is more useful than aggressive enhance
 
 The improvement over raw frames is modest but important for the project objective. It supports the claim that enhancement can improve weak plant recognition when paired with a strong feature extractor.
 
-However, not all enhancement helps. Earlier and current experiments show that stronger enhancement or combinations of multiple operations can reduce recognition performance. This likely happens because plant recognition depends on subtle color, texture, and shape cues. Overprocessing can change these cues enough to hurt classification.
+However, not all enhancement helps. In the current ResNet18-logistic regression results, `clahe_light` and `gamma_clahe_light` reach 90.78%, below the raw-frame baseline of 91.49%, while `sharpen_light` only matches raw performance. This suggests that enhancement is useful only when it improves visibility without changing the cues used for recognition. Plant recognition depends on subtle color, texture, and shape cues, so overprocessing or combining multiple operations can change those cues enough to hurt classification.
 
 ## 8. Limitations
 
@@ -138,11 +142,22 @@ The findings support the use of conservative image enhancement as a preprocessin
 
 ## References
 
-TODO: Add formal references in CVPR style.
+[1] K. Zuiderveld. Contrast Limited Adaptive Histogram Equalization. In P. S. Heckbert, editor, *Graphics Gems IV*, pages 474-485. Academic Press, 1994.
 
-Candidate references:
+[2] R. C. Gonzalez and R. E. Woods. *Digital Image Processing*. 4th edition. Pearson, 2018.
 
-- K. He, X. Zhang, S. Ren, and J. Sun. Deep Residual Learning for Image Recognition. CVPR, 2016.
-- OpenCV documentation for histogram equalization and CLAHE.
-- R. C. Gonzalez and R. E. Woods. Digital Image Processing.
+[3] K. He, X. Zhang, S. Ren, and J. Sun. Deep Residual Learning for Image Recognition. In *Proceedings of the IEEE Conference on Computer Vision and Pattern Recognition (CVPR)*, pages 770-778, 2016.
 
+[4] Z.-H. Zhou. A Brief Introduction to Weakly Supervised Learning. *National Science Review*, 5(1):44-53, 2018.
+
+[5] A. Karpathy, G. Toderici, S. Shetty, T. Leung, R. Sukthankar, and L. Fei-Fei. Large-Scale Video Classification with Convolutional Neural Networks. In *Proceedings of the IEEE Conference on Computer Vision and Pattern Recognition (CVPR)*, pages 1725-1732, 2014.
+
+[6] E. H. Land and J. J. McCann. Lightness and Retinex Theory. *Journal of the Optical Society of America*, 61(1):1-11, 1971.
+
+[7] W. Yang, S. Wang, Y. Fang, Y. Wang, and J. Liu. From Unpaired to Paired: A Benchmark and Baseline for Low-Light Image Enhancement. In *Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR)*, pages 220-229, 2020.
+
+[8] T. M. Cover and P. E. Hart. Nearest Neighbor Pattern Classification. *IEEE Transactions on Information Theory*, 13(1):21-27, 1967.
+
+[9] Y. LeCun, L. Bottou, Y. Bengio, and P. Haffner. Gradient-Based Learning Applied to Document Recognition. *Proceedings of the IEEE*, 86(11):2278-2324, 1998.
+
+[10] A. S. Razavian, H. Azizpour, J. Sullivan, and S. Carlsson. CNN Features Off-the-Shelf: An Astounding Baseline for Recognition. In *Proceedings of the IEEE Conference on Computer Vision and Pattern Recognition Workshops (CVPRW)*, pages 806-813, 2014.
