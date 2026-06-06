@@ -1,10 +1,15 @@
+# Ignore everything by default so the submitted repository stays focused.
+*
+
+# Keep Git metadata helpers.
+!.gitignore
+
+# Keep the runnable notebook and dependency list.
+!poc_review.ipynb
+!requirements.txt
+
+# Ignore common local/cache artifacts even inside allowed folders.
 .DS_Store
 __pycache__/
 *.pyc
-
-Dataset/*
-Raw Dataset Foldere-20260429.zip
-MCS 7224-Computer vision Min project Instruction.docx
-
-outputs/poc/frames/
-outputs/poc/torch_cache/
+.ipynb_checkpoints/
