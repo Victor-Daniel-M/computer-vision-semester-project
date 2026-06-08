@@ -5,7 +5,7 @@
 !.gitignore
 
 # Keep the runnable notebook and dependency list.
-!poc_review.ipynb
+!project_notebook.ipynb
 !requirements.txt
 
 # Ignore common local/cache artifacts even inside allowed folders.
